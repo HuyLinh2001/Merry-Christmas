@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NOEL V3 • Merry Christmas</title>
     <style>
         body { 
@@ -10,6 +10,7 @@
             overflow: hidden; 
             background: #000; 
             font-family: 'Cinzel Decorative', serif; 
+            touch-action: manipulation; /* Cải thiện touch trên mobile */
         }
         #canvas-container { 
             width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; 
@@ -34,57 +35,104 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* UI Layer */
+        /* UI Layer - Responsive */
         #ui-layer {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 10; pointer-events: none;
             display: flex; flex-direction: column; align-items: center;
-            padding-top: 60px;
+            padding: 20px;
+            box-sizing: border-box;
         }
+
         h1 {
             font-family: 'Cinzel Decorative', serif;
-            font-size: 68px; font-weight: 700; margin: 0;
-            letter-spacing: 12px;
+            font-size: clamp(36px, 12vw, 68px); /* Tự động co giãn theo màn hình */
+            font-weight: 700; margin: 0 0 20px 0;
+            letter-spacing: clamp(6px, 2vw, 12px);
             background: linear-gradient(to bottom, #fffbe6, #f5d5a0, #d4af37);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             text-shadow: 0 0 60px rgba(245, 213, 160, 0.6);
             opacity: 0.95;
             transition: opacity 0.8s ease;
+            text-align: center;
         }
 
         .upload-wrapper {
-            margin-top: 40px; pointer-events: auto; opacity: 1;
+            margin-top: auto; /* Đẩy xuống đáy */
+            margin-bottom: 100px; /* Tránh bị webcam che */
+            pointer-events: auto; opacity: 1;
             transition: opacity 0.8s ease;
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
+
         .upload-btn {
             background: rgba(15, 15, 15, 0.7);
             border: 1px solid rgba(245, 213, 160, 0.4);
-            color: #f5d5a0; padding: 14px 36px; cursor: pointer;
-            text-transform: uppercase; letter-spacing: 4px; font-size: 11px;
-            backdrop-filter: blur(10px); border-radius: 4px;
+            color: #f5d5a0; 
+            padding: 18px 40px; /* To hơn cho dễ bấm */
+            cursor: pointer;
+            text-transform: uppercase; 
+            letter-spacing: 4px; 
+            font-size: clamp(12px, 3.5vw, 14px);
+            backdrop-filter: blur(10px); 
+            border-radius: 8px;
             transition: all 0.5s ease;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            min-width: 220px;
+            text-align: center;
         }
-        .upload-btn:hover {
+        .upload-btn:hover, .upload-btn:active {
             background: linear-gradient(45deg, #d4af37, #f5d5a0);
             color: #000; border-color: transparent;
             box-shadow: 0 0 30px rgba(245, 213, 160, 0.6);
-            transform: translateY(-2px);
+            transform: translateY(-2px) scale(1.05);
         }
+
         .hint-text {
-            color: rgba(245, 213, 160, 0.6); font-size: 10px; margin-top: 12px;
-            letter-spacing: 2px; text-transform: uppercase;
+            color: rgba(245, 213, 160, 0.7); 
+            font-size: clamp(10px, 2.8vw, 12px);
+            margin-top: 16px;
+            letter-spacing: 2px; 
+            text-transform: uppercase;
+            text-align: center;
+            line-height: 1.4;
         }
 
         .ui-hidden { opacity: 0 !important; pointer-events: none !important; }
 
         #file-input { display: none; }
 
+        /* Webcam preview - nhỏ hơn và không che nút */
         #webcam-wrapper {
-            position: absolute; bottom: 20px; right: 20px;
-            width: 160px; height: 120px; opacity: 0.3;
-            border: 1px solid rgba(245,213,160,0.3); border-radius: 8px;
-            overflow: hidden; pointer-events: none; z-index: 20;
+            position: absolute; 
+            bottom: 20px; 
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px; 
+            height: 90px; 
+            opacity: 0.4;
+            border: 1px solid rgba(245,213,160,0.3); 
+            border-radius: 12px;
+            overflow: hidden; 
+            pointer-events: none; 
+            z-index: 20;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+
+        /* Ẩn webcam trên màn hình quá nhỏ để tránh rối */
+        @media (max-height: 500px) {
+            #webcam-wrapper { display: none; }
+        }
+
+        /* Tối ưu thêm cho màn hình ngang (landscape mobile) */
+        @media (orientation: landscape) and (max-height: 600px) {
+            h1 { font-size: clamp(30px, 8vw, 50px); margin-bottom: 10px; }
+            .upload-wrapper { margin-bottom: 60px; }
+            .upload-btn { padding: 14px 32px; }
         }
     </style>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&display=swap">
@@ -105,7 +153,7 @@
                 Thêm ảnh của bạn
                 <input type="file" id="file-input" multiple accept="image/*">
             </label>
-            <div class="hint-text">Nhấn H ẩn/hiện • Dùng tay: chụm / nắm / xòe</div>
+            <div class="hint-text">Nhấn H ẩn/hiện nút<br>Dùng tay: chụm / nắm / xòe</div>
         </div>
     </div>
 
@@ -113,6 +161,7 @@
         <video id="webcam" autoplay playsinline muted style="width:100%; height:100%; object-fit: cover;"></video>
     </div>
 
+    <!-- Phần script giữ nguyên hoàn toàn (không thay đổi gì ở đây) -->
     <script type="importmap">
     {
         "imports": {
@@ -409,17 +458,12 @@
             }
         }
 
-        // ===== HÀM ĐÃ ĐƯỢC SỬA: GIỮ NGUYÊN TỈ LỆ ẢNH =====
         function addPhoto(texture) {
             const group = new THREE.Group();
 
-            // Tính aspect ratio của ảnh thực tế
             const imageAspect = texture.image.width / texture.image.height;
-
-            // Kích thước khung cố định (vuông)
             const frameSize = 1.5;
 
-            // Tạo khung vàng
             const frame = new THREE.Mesh(
                 new THREE.BoxGeometry(frameSize, frameSize, 0.08),
                 new THREE.MeshStandardMaterial({
@@ -431,11 +475,9 @@
             );
             group.add(frame);
 
-            // Tính kích thước ảnh sao cho vừa khung mà giữ nguyên tỉ lệ
-            let photoWidth = frameSize * 0.86;   // 86% để có viền đẹp
+            let photoWidth = frameSize * 0.86;
             let photoHeight = photoWidth / imageAspect;
 
-            // Nếu ảnh quá cao (dọc) thì giới hạn chiều cao và điều chỉnh chiều rộng
             if (photoHeight > frameSize * 0.86) {
                 photoHeight = frameSize * 0.86;
                 photoWidth = photoHeight * imageAspect;
@@ -444,14 +486,13 @@
             const photoGeometry = new THREE.PlaneGeometry(photoWidth, photoHeight);
             const photoMaterial = new THREE.MeshBasicMaterial({
                 map: texture,
-                toneMapped: false   // Quan trọng: tránh bị bloom làm chói và mất chi tiết
+                toneMapped: false
             });
 
             const photo = new THREE.Mesh(photoGeometry, photoMaterial);
-            photo.position.z = 0.05; // Đưa ảnh lên trước khung một chút
+            photo.position.z = 0.05;
             group.add(photo);
 
-            // Scale tổng thể (có thể chỉnh nếu muốn ảnh lớn/nhỏ hơn)
             group.scale.setScalar(0.8);
 
             photoGroup.add(group);
