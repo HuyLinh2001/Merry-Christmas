@@ -14,13 +14,14 @@ const CONFIG = {
         warmWhite: 0xfff8e1
     },
     particles: {
-        count: 1000,        // ornaments
+        count: 1000,        // giảm từ 1600 → 1000
+        snowCount: 2000,    // giảm từ 3000 → 2000
         treeHeight: 26,
         treeRadius: 9
     },
     lights: {
-        fairyCount: 120,
-        fairyIntensity: 1.8
+        fairyCount: 120,    // giảm từ 180 → 120
+        fairyIntensity: 1.8 // dùng emissive thay PointLight
     }
 };
 
@@ -34,7 +35,7 @@ const STATE = {
 
 let scene, camera, renderer, composer, mainGroup, photoGroup, clock = new THREE.Clock();
 let particleSystem = [], fairyLights = [];
-
+let snowParticles;
 let handLandmarker = null, video = null;
 
 const photoFiles = [
@@ -52,8 +53,9 @@ const photoFiles = [
 async function init() {
     setupScene();
     setupLights();
-    createFairyLights();
+    createFairyLights();     // giờ chỉ dùng emissive, không PointLight
     createOrnaments();
+    createPointSnow();
     createStripeTexture();
     setupPostProcessing();
     setupEvents();
@@ -78,11 +80,11 @@ function setupScene() {
 
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     renderer = new THREE.WebGLRenderer({
-        antialias: !isMobile,
+        antialias: !isMobile,           // tắt antialias trên mobile
         powerPreference: "high-performance"
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // max 1.5
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.1;
     document.getElementById('canvas-container').appendChild(renderer.domElement);
@@ -195,6 +197,64 @@ function createOrnaments() {
     );
     star.position.y = CONFIG.particles.treeHeight / 2 + 1.8;
     mainGroup.add(star);
+}
+
+function createPointSnow() {
+    const count = CONFIG.particles.snowCount;
+    const positions = new Float32Array(count * 3);
+    const velocities = new Float32Array(count);
+
+    for (let i = 0; i < count; i++) {
+        positions[i * 3]     = (Math.random() - 0.5) * 120;
+        positions[i * 3 + 1] = Math.random() * 40 + 10;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 80 - 10;
+
+        // GIẢM TỐC ĐỘ RƠI XUỐNG RẤT CHẬM (trước là 2-5, giờ chỉ 0.4-1.2)
+        velocities[i] = 0.4 + Math.random() * 0.8;
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    const material = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 0.5,
+        transparent: true,
+        opacity: 0.4,
+        depthWrite: false,
+        sizeAttenuation: true,
+        blending: THREE.AdditiveBlending  // thêm để tuyết sáng nhẹ, lung linh hơn
+    });
+
+    snowParticles = new THREE.Points(geometry, material);
+    snowParticles.userData = { velocities };
+    scene.add(snowParticles);
+}
+
+let snowUpdateCounter = 0;
+function updatePointSnow(dt) {
+    if (!snowParticles) return;
+    
+    snowUpdateCounter++;
+    if (snowUpdateCounter % 2 !== 0) return; // vẫn update mỗi 2 frame để mượt + tiết kiệm CPU
+
+    const positions = snowParticles.geometry.attributes.position.array;
+    const velocities = snowParticles.userData.velocities;
+
+    for (let i = 0; i < positions.length / 3; i++) {
+        // TỐC ĐỘ RƠI CHẬM HƠN, MƯỢT HƠN
+        // Trước: dt * 60 (rất nhanh khi skip frame)
+        // Giờ: chỉ dt * 15 → tuyết rơi nhẹ nhàng, lững lờ
+        positions[i * 3 + 1] -= velocities[i] * dt * 15;
+
+        // Khi tuyết rơi xuống dưới, reset lên trên với vị trí mới
+        if (positions[i * 3 + 1] < -10) {
+            positions[i * 3 + 1] = 40 + Math.random() * 10;
+            positions[i * 3]     = (Math.random() - 0.5) * 120;
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 80 - 10;
+        }
+    }
+    snowParticles.geometry.attributes.position.needsUpdate = true;
 }
 
 class Particle {
@@ -378,9 +438,9 @@ function setupPostProcessing() {
     const renderPass = new RenderPass(scene, camera);
     const bloom = new UnrealBloomPass(
         new THREE.Vector2(window.innerWidth, window.innerHeight),
-        1.0,
-        0.3,
-        0.8
+        1.0,   // strength giảm
+        0.3,   // radius giảm
+        0.8    // threshold cao hơn → ít vật thể bloom hơn
     );
     bloom.strength = 0.45;
     bloom.radius = 0.5;
@@ -395,7 +455,7 @@ function animate() {
     const dt = clock.getDelta();
     const time = performance.now() * 0.003;
 
-    // Fairy lights flicker
+    // Fairy lights flicker nhẹ nhàng
     fairyLights.forEach(light => {
         const intensity = CONFIG.lights.fairyIntensity * (0.8 + 0.4 * Math.sin(time + light.userData.phase));
         light.material.emissiveIntensity = intensity;
@@ -407,6 +467,7 @@ function animate() {
     mainGroup.rotation.y = STATE.rotation.y;
 
     particleSystem.forEach(p => p.update(dt, STATE.mode, STATE.focusTarget));
+    updatePointSnow(dt);
 
     composer.render();
 }
