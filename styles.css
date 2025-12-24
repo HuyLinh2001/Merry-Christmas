@@ -1,0 +1,87 @@
+body { 
+    margin: 0; 
+    overflow: hidden; 
+    background: #000; 
+    font-family: 'Cinzel Decorative', serif; 
+    touch-action: manipulation;
+}
+
+#canvas-container { 
+    width: 100vw; 
+    height: 100vh; 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+}
+
+/* Loader */
+#loader {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle at center, #0f0f0f 0%, #000 70%);
+    z-index: 1000; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    transition: opacity 1.2s ease-out;
+}
+.loader-text {
+    color: #f5d5a0; font-size: 16px; letter-spacing: 8px; margin-top: 30px;
+    text-transform: uppercase; font-weight: 300; opacity: 0.9;
+}
+.spinner {
+    width: 50px; height: 50px; border: 2px solid rgba(245, 213, 160, 0.2);
+    border-top-color: #f5d5a0; border-radius: 50%;
+    animation: spin 1.2s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* UI Layer */
+#ui-layer {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 10; pointer-events: none;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+h1 {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(36px, 12vw, 68px);
+    font-weight: 700; margin: 0 0 20px 0;
+    letter-spacing: clamp(6px, 2vw, 12px);
+    background: linear-gradient(to bottom, #fffbe6, #f5d5a0, #d4af37);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 60px rgba(245, 213, 160, 0.6);
+    opacity: 0.95;
+    transition: opacity 0.8s ease;
+    text-align: center;
+}
+
+/* Webcam preview */
+#webcam-wrapper {
+    position: absolute; 
+    bottom: 20px; 
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px; 
+    height: 90px; 
+    opacity: 0.4;
+    border: 1px solid rgba(245,213,160,0.3); 
+    border-radius: 12px;
+    overflow: hidden; 
+    pointer-events: none; 
+    z-index: 20;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+}
+
+#webcam {
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover;
+}
+
+@media (max-height: 500px) {
+    #webcam-wrapper { display: none; }
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+    h1 { font-size: clamp(30px, 8vw, 50px); margin-bottom: 10px; }
+}
