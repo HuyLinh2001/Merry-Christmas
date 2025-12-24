@@ -472,4 +472,4 @@ function animate() {
     composer.render();
 }
 
-init();s
+init();
