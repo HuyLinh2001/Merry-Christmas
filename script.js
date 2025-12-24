@@ -474,7 +474,6 @@ function animate() {
 }
 const music = document.getElementById('christmas-music');
 if (music) {
-    music.volume = 0.3;  // Âm lượng 30% - nhẹ nhàng, không lấn át hiệu ứng 3D
-    // Nếu muốn thấp hơn: 0.2, cao hơn: 0.4-0.5
+    music.volume = 0.3; 
 }
 init();
