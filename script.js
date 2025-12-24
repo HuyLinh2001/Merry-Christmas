@@ -119,7 +119,7 @@ function setupLights() {
 
 function createFairyLights() {
     const lightGeo = new THREE.SphereGeometry(0.15, 16, 16);
-    for (let i = 0; i < 180; i++) {
+    for (let i = 0; i < 30; i++) {
         const t = Math.random();
         const y = (t * CONFIG.particles.treeHeight) - CONFIG.particles.treeHeight / 2;
         const r = CONFIG.particles.treeRadius * (1 - t) * (0.7 + Math.random() * 0.4);
